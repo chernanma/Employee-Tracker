@@ -14,14 +14,4 @@ var connection = mysql.createConnection({
   database: "employee_tracker_db"
 });
 
-exports.startconnection = () =>{
-    connection.connect(function(err) {
-        if (err) throw err;
-        console.log("Connected as id " + connection.threadId + "\n");  
-      });
-}
-
-exports.endconnection = () =>{
-    connection.end();
-}
-
+module.exports = connection;

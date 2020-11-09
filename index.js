@@ -2,6 +2,7 @@
 const logo = require('asciiart-logo');
 const inquirer = require("inquirer");
 const connection = require('./db/connection');
+const cTable = require('console.table');
 //Adding Logo using  Asciiart module
 console.log(
     logo({
@@ -20,5 +21,24 @@ console.log(
     .render()
 );
 
-connection.startconnection();
+function start(){
+    connection.connect(function(err) {
+        if (err) throw err;
+        console.log("Connected as id " + connection.threadId + "\n");
+        readEmployees();  
+      });
+           
+}
 
+
+function readEmployees() {
+    console.log("Selecting all Employees...\n");
+    connection.query("SELECT * FROM employee", function(err, res) {
+      if (err) throw err;
+      // Log all results of the SELECT statement
+      console.table(res);
+      connection.end();  
+    });
+  }
+
+  start();
