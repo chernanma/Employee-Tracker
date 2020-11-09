@@ -3,34 +3,40 @@ const logo = require('asciiart-logo');
 const inquirer = require("inquirer");
 const connection = require('./db/connection');
 const cTable = require('console.table');
-//Adding Logo using  Asciiart module
-console.log(
-    logo({
-        name: 'Employee Tracker',        
-        lineChars: 20,
-        padding: 2,
-        margin: 3,
-        borderColor: 'red',
-        logoColor: 'bold-red',
-        textColor: 'white',
-    })
-    .emptyLine()
-    .right('version 1.0.0')
-    .emptyLine()
-    .left('by Cesar H Martinez')
-    .render()
-);
+
+function banner(){
+    //Adding Logo using  Asciiart module
+    console.log(
+        logo({
+            name: 'Employee Tracker',        
+            lineChars: 20,
+            padding: 2,
+            margin: 3,
+            borderColor: 'red',
+            logoColor: 'bold-red',
+            textColor: 'white',
+        })
+        .emptyLine()
+        .right('version 1.0.0')
+        .emptyLine()
+        .left('by Cesar H Martinez')
+        .render()
+    );
+}
+
 
 function start(){
     connection.connect(function(err) {
         if (err) throw err;
-        console.log("Connected as id " + connection.threadId + "\n");
+        console.log("Connected as id " + connection.threadId + "\n");  
+         banner();      
          promptMenu();
       });
            
 }
 
 function promptMenu() {
+    
     inquirer
       .prompt({
         name: "action",
@@ -58,13 +64,19 @@ function promptMenu() {
       .then(function(answer) {
         switch (answer.action) {
         case "View all Employees":
+            console.clear();
+            banner();
             viewEmployees();            
             break;
         case "View all Employees by Department":
-            viewEmployees();
+            console.clear();
+            banner();
+            viewDepartments();
             break;
         case "View all Employees by Manager":
-            viewEmployees();
+            console.clear();
+            banner();
+            viewEmployeesbyManager();
             break;
         case "Add Employee":
             viewEmployees();
@@ -79,6 +91,8 @@ function promptMenu() {
             viewEmployees();
             break;
         case "View all Roles":
+            console.clear();
+            banner();
             viewRoles();
             break;
         case "Add Role":
@@ -94,6 +108,7 @@ function promptMenu() {
             viewDepartments();
             break;
         case "Add Department":
+            console.clear();
             createDepartment();
             break;
         case "Remove Department":
@@ -119,6 +134,46 @@ function viewEmployees() {
       promptMenu();
     });
   }
+
+function viewEmployeesbyManager() {
+    var query = "SELECT e1.id, e1.first_name, e1.last_name FROM employee e1 inner join employee e2 on e1.id=e2.manager_id";
+    connection.query(query, function (err, res) {
+        if (err) throw err;
+        inquirer
+            .prompt({
+            name: "choice",
+            type: "rawlist",
+            message: "Choose Manager",
+            choices: function(){
+                const managerArray = [];
+                for (let i=0; i<res.length;i++){
+                    managerArray.push(res[i].first_name + " " + res[i].last_name);
+                }
+                return managerArray;
+            }
+            })   
+            .then(function(answer) {                
+                let chosenManager;
+                for (let i = 0; i<res.length; i++){
+                    if ((res[i].first_name + " " + res[i].last_name)=== answer.choice){
+                        chosenManager=res[i].id;
+                    }
+                }
+                console.log("Selecting Employees...\n");
+                connection.query(`SELECT * FROM employee WHERE manager_id=${chosenManager}`, function(err, res) {
+                    if (err) throw err;
+                    // Log all results of the SELECT statement      
+                    console.table(res);
+                    promptMenu();
+                });
+            })   
+                 
+    });  
+
+    
+}
+
+
 
 function viewDepartments() {
     console.log("Selecting all Departments...\n");
