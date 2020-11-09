@@ -39,13 +39,3 @@ CREATE TABLE employee (
 
 
 
-
-
-
-
-
--- Inserted a set of records into the table
-INSERT INTO schools (name)
-VALUES ("Hogwarts School of Witchcraft");
-
-
