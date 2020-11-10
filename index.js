@@ -79,7 +79,7 @@ function promptMenu() {
             viewEmployeesbyManager();
             break;
         case "Add Employee":
-            viewEmployees();
+            createEmployee();
             break;
         case "Remove Employee":
             viewEmployees();
@@ -96,7 +96,7 @@ function promptMenu() {
             viewRoles();
             break;
         case "Add Role":
-            viewEmployees();
+            createRole();
             break;
         case "Remove Role":
             viewEmployees();
@@ -109,6 +109,7 @@ function promptMenu() {
             break;
         case "Add Department":
             console.clear();
+            banner();
             createDepartment();
             break;
         case "Remove Department":
@@ -134,6 +135,110 @@ function viewEmployees() {
       promptMenu();
     });
   }
+  
+
+  function createEmployee() {
+    let roleArray=[];    
+    connection.query("SELECT * FROM role", function(err, resRole) {
+        if (err) throw err;
+        // Log all results of the SELECT statement      
+        for (var i=0;i<resRole.length;i++){
+            roleArray.push(resRole[i].title);
+        }
+        let employeeArray=[]; 
+        connection.query("SELECT * FROM employee", function(err, resEmployee) {
+            if (err) throw err;
+            // Log all results of the SELECT statement      
+            for (var i=0;i<resEmployee.length;i++){
+                employeeArray.push(resEmployee[i].first_name + " " + resEmployee[i].last_name);
+            }
+
+        inquirer
+            .prompt([
+                {            
+                name: "first_name",
+                type: "input",
+                message: "Please, enter First Name: "
+                },
+                {            
+                    name: "last_name",
+                    type: "input",
+                    message: "Please, enter Last Name: "
+                },
+                {
+                    name: "choice_role",
+                    type: "rawlist",
+                    message: "Select Role",
+                    choices: roleArray                    
+                },                
+                {
+                    name: "choice_manager",
+                    type: "rawlist",
+                    message: "Select Manager",
+                    choices: employeeArray                    
+                }
+            ])
+            .then(answers => {
+                //Inserting new value to employee table
+                console.log("Creating new employee...\n");                
+                let roleId;
+                for (i=0; i< resRole.length;i++){
+                    if (resRole[i].title === answers.choice_role) {
+                        roleId = resRole[i].id;
+                    } 
+                 }    
+                // let roleId; 
+                // connection.query(`SELECT id FROM role WHERE title="${answers.choice_role}"`,function(err, res) {
+                //     if (err) throw err;
+                //     // Log all results of the SELECT statement    
+                //     roleId=res.id;  
+                    
+                // });
+                console.log(roleId);
+                let managerId;
+                console.log(answers.choice_manager);
+                console.log(resEmployee);
+                let fullname;
+                for (let i=0; i<resEmployee.length;i++){
+                    fullname = resEmployee[i].first_name +" "+resEmployee[i].last_name;
+                    
+                    if (fullname === answers.choice_manager){
+                        managerId=resEmployee[i].id;
+                    }
+                }                
+                // let managerId = connection.query(`SELECT id FROM employee WHERE first_name=${answers.choice_manager.first_name} AND last_name=${answers.choice_manager.last_name}`,function(err, res) {
+                //     if (err) throw err;
+                //     // Log all results of the SELECT statement    
+                //     return res;  
+                // });                
+                connection.query("INSERT INTO employee SET ?",
+                {
+                    first_name: answers.first_name,
+                    last_name: answers.last_name,
+                    role_id: roleId,
+                    manager_id: managerId
+                },
+                function(err, res) {
+                    if (err) throw err;
+                    console.log(res.affectedRows + " record inserted!\n");
+                    // Call updateProduct AFTER the INSERT completes                
+                    promptMenu();
+                }
+                );
+
+            })
+            .catch(error => {
+                if(error.isTtyError) {
+                // Prompt couldn't be rendered in the current environment
+                } else {
+                // Something else when wrong
+                }
+            });   
+
+        });
+            
+    });
+}
 
 function viewEmployeesbyManager() {
     var query = "SELECT e1.id, e1.first_name, e1.last_name FROM employee e1 inner join employee e2 on e1.id=e2.manager_id";
@@ -159,7 +264,7 @@ function viewEmployeesbyManager() {
                         chosenManager=res[i].id;
                     }
                 }
-                console.log("Selecting Employees...\n");
+                console.log("Employees under " + answer.choice +"..\n");
                 connection.query(`SELECT * FROM employee WHERE manager_id=${chosenManager}`, function(err, res) {
                     if (err) throw err;
                     // Log all results of the SELECT statement      
@@ -203,9 +308,8 @@ function createDepartment() {
             },
             function(err, res) {
                 if (err) throw err;
-                console.log(res.affectedRows + " product inserted!\n");
-                // Call updateProduct AFTER the INSERT completes
-                viewDepartments();
+                console.log(res.affectedRows + " record inserted!\n");
+                // Call updateProduct AFTER the INSERT completes                
                 promptMenu();
             }
             );
@@ -232,6 +336,72 @@ function viewRoles() {
     });
 }
 
+
+function createRole() {
+    const departmentArray=[];    
+    connection.query("SELECT * FROM department", function(err, res) {
+        if (err) throw err;
+        // Log all results of the SELECT statement      
+        for (var i=0;i<res.length;i++){
+            departmentArray.push(res[i]);
+        }
+        inquirer
+            .prompt([
+                {            
+                name: "title",
+                type: "input",
+                message: "Please, enter title for new Role: "
+                },
+                {            
+                    name: "salary",
+                    type: "input",
+                    message: "Please, enter salary for new Role: "
+                },
+                {
+                    name: "choice",
+                    type: "rawlist",
+                    message: "Select Department",
+                    choices: departmentArray                    
+                }
+            ])
+            .then(answers => {
+                //Inserting new value to Role table
+                console.log("Creating new Role...\n");
+                let depId;
+                for (i=0; i< res.length;i++){
+                    if (res[i].name === answers.choice) {
+                      depId = res[i].id;
+                    } 
+                 }     
+                connection.query(
+                "INSERT INTO role SET ?",
+                {
+                    title: answers.title,
+                    salary: parseInt(answers.salary),
+                    department_id: depId
+                },
+                function(err, res) {
+                    if (err) throw err;
+                    console.log(res.affectedRows + " record inserted!\n");
+                    // Call updateProduct AFTER the INSERT completes                
+                    promptMenu();
+                }
+                );
+
+            })
+            .catch(error => {
+                if(error.isTtyError) {
+                // Prompt couldn't be rendered in the current environment
+                } else {
+                // Something else when wrong
+                }
+            });   
+    });
+}
+   
+
+        
+    
 
 
 
