@@ -85,7 +85,7 @@ function promptMenu() {
             viewEmployees();
             break;
         case "Update Employee Role":
-            viewEmployees();
+            updateEmployeeRole();
             break;
         case "Update Employee Manager":
             viewEmployees();
@@ -238,6 +238,77 @@ function viewEmployees() {
         });
             
     });
+}
+
+function updateEmployeeRole() {
+
+    console.log("Selecting all Employees...\n");
+    connection.query("SELECT * FROM employee", function(err, res) {
+      if (err) throw err;
+      // Log all results of the SELECT statement      
+      console.table(res);
+    });
+    let roleArray=[];    
+    connection.query("SELECT * FROM role", function(err, resRole) {
+        if (err) throw err;
+        // Log all results of the SELECT statement      
+        for (var i=0;i<resRole.length;i++){
+            roleArray.push(resRole[i].title);
+        }
+
+        inquirer
+        .prompt([
+            {            
+            name: "id",
+            type: "input",
+            message: "Please, enter employee Id: "
+            },
+            {
+                name: "choice_role",
+                type: "rawlist",
+                message: "Select Role",
+                choices: roleArray                    
+            }
+        ])
+        .then(answers => {
+            //Updating Employee Role
+            console.log("Updating Employee \n");
+            let roleId;
+            for (i=0; i< resRole.length;i++){
+                if (resRole[i].title === answers.choice_role) {
+                    roleId = resRole[i].id;
+                } 
+             }    
+
+            var query = connection.query(
+            "UPDATE employee SET ? WHERE ?",
+            [
+                {
+                role_id: roleId
+                },
+                {
+                id: answers.id
+                }
+            ],
+            function(err, res) {
+                if (err) throw err;
+                console.log(res.affectedRows + " Employee Role has been updated!\n");
+                // Call Main Menu
+                promptMenu();
+            }
+            );          
+
+        })
+        .catch(error => {
+            if(error.isTtyError) {
+            // Prompt couldn't be rendered in the current environment
+            } else {
+            // Something else when wrong
+            }
+        });   
+
+    });           
+    
 }
 
 function viewEmployeesbyManager() {
