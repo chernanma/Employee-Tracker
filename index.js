@@ -88,7 +88,7 @@ function promptMenu() {
             updateEmployeeRole();
             break;
         case "Update Employee Manager":
-            viewEmployees();
+            updateEmployeeManager();
             break;
         case "View all Roles":
             console.clear();
@@ -311,6 +311,88 @@ function updateEmployeeRole() {
     
 }
 
+function updateEmployeeManager() {
+
+    console.log("Selecting all Employees...\n");
+    connection.query("SELECT * FROM employee", function(err, res) {
+      if (err) throw err;
+      // Log all results of the SELECT statement      
+      console.table(res);
+    
+        console.log("\n");
+        inquirer
+            .prompt([
+                {            
+                name: "id",
+                type: "input",
+                message: "Please, enter employee Id: "
+                }
+            ])
+            .then(answers => {
+                //Updating Employee Role
+
+                let employeeArray=[]; 
+                connection.query(`SELECT * FROM employee WHERE id !=${answers.id}`, function(err, resEmployee) {
+                    if (err) throw err;
+                    // Log all results of the SELECT statement      
+                    for (var i=0;i<resEmployee.length;i++){
+                        employeeArray.push(resEmployee[i].first_name + " " + resEmployee[i].last_name);
+                    }  
+
+                    inquirer
+                    .prompt([
+                        {
+                            name: "choice_manager",
+                            type: "rawlist",
+                            message: "Select Manager",
+                            choices: employeeArray 
+                            // Here code to validate manager chose is not its own id                   
+                        }        
+                    ])
+                    .then(answersManager => {
+                        console.log("Updating Employee Manager\n");          
+                        let managerId;           
+                        let fullname;
+                        for (let i=0; i<resEmployee.length;i++){
+                            fullname = resEmployee[i].first_name +" "+resEmployee[i].last_name;                
+                            if (fullname === answersManager.choice_manager){
+                                managerId=resEmployee[i].id;
+                            }
+                        }     
+            
+                        connection.query(
+                        "UPDATE employee SET ? WHERE ?",
+                        [
+                            {
+                            manager_id: managerId
+                            },
+                            {
+                            id: answers.id
+                            }
+                        ],
+                        function(err, res) {
+                            if (err) throw err;
+                            console.log(res.affectedRows + " Employee Manager has been updated!\n");
+                            // Call Main Menu
+                            promptMenu();
+                        }
+                        );          
+            
+                    })               
+                
+                    .catch(error => {
+                        if(error.isTtyError) {
+                        // Prompt couldn't be rendered in the current environment
+                        } else {
+                        // Something else when wrong
+                        }
+                    }); 
+                });
+            });      
+        });                 
+    
+}
+
 function viewEmployeesbyManager() {
     var query = "SELECT e1.id, e1.first_name, e1.last_name FROM employee e1 inner join employee e2 on e1.id=e2.manager_id";
     connection.query(query, function (err, res) {
@@ -345,7 +427,6 @@ function viewEmployeesbyManager() {
             })   
                  
     });  
-
     
 }
 
