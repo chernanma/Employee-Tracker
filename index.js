@@ -116,7 +116,9 @@ function promptMenu() {
             viewEmployees();
             break;
         case "View the total utilized budget of a Department":
-            viewEmployees();
+            console.clear();
+            banner();
+            viewUtilizedBudgetbyDep();
             break;
         case "Exit":
             connection.end();
@@ -552,10 +554,55 @@ function createRole() {
 }
    
 
-        
+function viewUtilizedBudgetbyDep() {
+    let depArray=[];    
+    connection.query("SELECT * FROM department", function(err, resDep) {
+        if (err) throw err;
+        // Log all results of the SELECT statement      
+        for (var i=0;i<resDep.length;i++){
+            depArray.push(resDep[i].name);
+        }
+        inquirer
+            .prompt([                    
+                {
+                    name: "choice_department",
+                    type: "rawlist",
+                    message: "Select Department",
+                    choices: depArray                    
+                }
+            ])
+            .then(answers => {                               
+                let depId;                
+                for (let i=0; i<resDep.length;i++){                    
+                    if (resDep[i].name === answers.choice_department){
+                        depId=resDep[i].id;
+                    }
+                }                                     
+                connection.query(`SELECT department.name,SUM(role.salary) 
+                FROM ((role
+                INNER JOIN employee ON role.id = employee.role_id )
+                inner join department on role.department_id = department.id )
+                where department.id = ${depId}
+                group by department.id`, function(err, res) {
+                    if (err) throw err;
+                    console.log("Utilized budget of the "+ answers.choice_department + " department\n");
+                    console.table(res);
+                    // Call updateProduct AFTER the INSERT completes                
+                    promptMenu();
+                }
+                );
+
+            })
+            .catch(error => {
+                if(error.isTtyError) {
+                // Prompt couldn't be rendered in the current environment
+                } else {
+                // Something else when wrong
+                }
+            });   
+
+        });            
     
-
-
-
+}
 
   start();
