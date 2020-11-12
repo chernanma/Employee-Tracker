@@ -44,8 +44,7 @@ function promptMenu() {
         message: "What would you like to do?",
         choices: [
           "View all Employees",
-          "View all Employees by Department",
-          "View all Employees by Manager",
+          "View all Employees by Manager",          
           "Add Employee",
           "Remove Employee",
           "Update Employee Role",
@@ -67,22 +66,19 @@ function promptMenu() {
             console.clear();
             banner();
             viewEmployees();            
-            break;
-        case "View all Employees by Department":
-            console.clear();
-            banner();
-            viewDepartments();
-            break;
+            break;        
         case "View all Employees by Manager":
             console.clear();
             banner();
             viewEmployeesbyManager();
             break;
         case "Add Employee":
+            console.clear();
+            banner();
             createEmployee();
             break;
         case "Remove Employee":
-            viewEmployees();
+            deleteEmployee();
             break;
         case "Update Employee Role":
             updateEmployeeRole();
@@ -130,7 +126,11 @@ function promptMenu() {
 
 function viewEmployees() {    
     console.log("Selecting all Employees...\n");
-    connection.query("SELECT * FROM employee", function(err, res) {
+    connection.query(`SELECT employee.id, concat(employee.first_name,' ', employee.last_name) as Employee, role.title as Title, role.salary as Salary, concat(e2.first_name,' ', e2.last_name) as Manager, department.name as Department 
+                    FROM employee 
+                    inner join role on role.id = employee.role_id
+                    left join employee e2 on employee.manager_id= e2.id 
+                    inner join department on role.department_id=department.id`, function(err, res) {
       if (err) throw err;
       // Log all results of the SELECT statement      
       console.table(res);
@@ -195,11 +195,8 @@ function viewEmployees() {
                 //     // Log all results of the SELECT statement    
                 //     roleId=res.id;  
                     
-                // });
-                console.log(roleId);
-                let managerId;
-                console.log(answers.choice_manager);
-                console.log(resEmployee);
+                // });                
+                let managerId;               
                 let fullname;
                 for (let i=0; i<resEmployee.length;i++){
                     fullname = resEmployee[i].first_name +" "+resEmployee[i].last_name;
@@ -242,6 +239,18 @@ function viewEmployees() {
     });
 }
 
+//validation just numbers for ID
+// const valID= async (id)=>{
+    
+//     if (id!=='' && Number(id)){
+//         return true;        
+//     }else{
+//         console.clear();
+//         promptMenu();        
+//     }
+    
+//   };
+
 function updateEmployeeRole() {
 
     console.log("Selecting all Employees...\n");
@@ -263,7 +272,8 @@ function updateEmployeeRole() {
             {            
             name: "id",
             type: "input",
-            message: "Please, enter employee Id: "
+            message: "Please, enter employee Id or Press enter twice to Cancel: ",
+                       
             },
             {
                 name: "choice_role",
@@ -274,7 +284,7 @@ function updateEmployeeRole() {
         ])
         .then(answers => {
             //Updating Employee Role
-            console.log("Updating Employee \n");
+            
             let roleId;
             for (i=0; i< resRole.length;i++){
                 if (resRole[i].title === answers.choice_role) {
@@ -294,7 +304,10 @@ function updateEmployeeRole() {
             ],
             function(err, res) {
                 if (err) throw err;
-                console.log(res.affectedRows + " Employee Role has been updated!\n");
+                if (res.affectedRows!==0){
+                    console.log(res.affectedRows + " Employee Role has been updated!\n");
+                }
+               
                 // Call Main Menu
                 promptMenu();
             }
@@ -395,8 +408,49 @@ function updateEmployeeManager() {
     
 }
 
+function deleteEmployee() {
+    
+    connection.query("SELECT * FROM employee", function(err, res) {
+      if (err) throw err;
+      // Log all results of the SELECT statement      
+      console.table(res);
+        inquirer
+        .prompt([
+            {            
+            name: "id",
+            type: "input",
+            message: "Please, enter employee Id: (press ente to return)",
+
+            }
+        ])
+        .then(answers => {
+           
+            connection.query(
+            "DELETE FROM employee WHERE ?",
+            {
+                id: answers.id
+            },
+            function(err, res) {
+                // if (err)throw err;
+                if (err){
+                    console.log("Cannot delete or update a parent record, put employee under a different manager before delete it.\n");
+                    promptMenu();
+                }   
+                if(res.affectedRows!=0){
+                    console.log(res.affectedRows + " Employee deleted!\n");
+                }            
+                
+                // Call main menue AFTER the DELETE completed
+                promptMenu();
+            }
+            );
+        })
+        
+    });
+  }
+
 function viewEmployeesbyManager() {
-    var query = "SELECT e1.id, e1.first_name, e1.last_name FROM employee e1 inner join employee e2 on e1.id=e2.manager_id";
+    var query = "SELECT e1.id, e1.first_name, e1.last_name FROM employee e1 inner join employee e2 on e1.id=e2.manager_id group by e1.id";
     connection.query(query, function (err, res) {
         if (err) throw err;
         inquirer
@@ -431,6 +485,8 @@ function viewEmployeesbyManager() {
     });  
     
 }
+
+
 
 
 
@@ -578,7 +634,7 @@ function viewUtilizedBudgetbyDep() {
                         depId=resDep[i].id;
                     }
                 }                                     
-                connection.query(`SELECT department.name,SUM(role.salary) 
+                connection.query(`SELECT department.name as Department,SUM(role.salary) as Total_Utilized_Budget
                 FROM ((role
                 INNER JOIN employee ON role.id = employee.role_id )
                 inner join department on role.department_id = department.id )
