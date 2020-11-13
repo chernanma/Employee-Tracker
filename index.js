@@ -95,7 +95,8 @@ function promptMenu() {
             createRole();
             break;
         case "Remove Role":
-            viewEmployees();
+            console.clear();
+            deleteRole();
             break;
         case "Update Role":
             viewEmployees();
@@ -109,7 +110,8 @@ function promptMenu() {
             createDepartment();
             break;
         case "Remove Department":
-            viewEmployees();
+            console.clear();
+            deleteDepartment();
             break;
         case "View the total utilized budget of a Department":
             console.clear();
@@ -419,7 +421,7 @@ function deleteEmployee() {
             {            
             name: "id",
             type: "input",
-            message: "Please, enter employee Id: (press ente to return)",
+            message: "Please, enter employee Id or Press ente to return : ",
 
             }
         ])
@@ -431,17 +433,19 @@ function deleteEmployee() {
                 id: answers.id
             },
             function(err, res) {
-                // if (err)throw err;
                 if (err){
                     console.log("Cannot delete or update a parent record, put employee under a different manager before delete it.\n");
+                     promptMenu();
+                }else{
+                    if(res.affectedRows!=0){
+                        console.log(res.affectedRows + " Employee deleted!\n");
+                          // Call main menue AFTER the DELETE completed
+                        
+                    }            
                     promptMenu();
                 }   
-                if(res.affectedRows!=0){
-                    console.log(res.affectedRows + " Employee deleted!\n");
-                }            
-                
-                // Call main menue AFTER the DELETE completed
-                promptMenu();
+              
+              
             }
             );
         })
@@ -535,6 +539,47 @@ function createDepartment() {
     
 }
 
+function deleteDepartment() {
+    
+    connection.query("SELECT * FROM department", function(err, res) {
+      if (err) throw err;
+      // Log all results of the SELECT statement      
+      console.table(res);
+        inquirer
+        .prompt([
+            {            
+            name: "id",
+            type: "input",
+            message: "Please, enter Department Id or Press enter to return",
+
+            }
+        ])
+        .then(answers => {
+           
+            connection.query(
+            "DELETE FROM department WHERE ?",
+            {
+                id: answers.id
+            },
+            function(err, res) {
+                // if (err)throw err;
+                if (err){
+                    console.log("Cannot delete or update a parent record, make sure there are not Roles under this deparment before delete.\n");    
+                    promptMenu();
+                }else{
+                    if(res.affectedRows!=0){
+                        console.log(res.affectedRows + " Department has been deleted!\n");
+                    }            
+                    
+                    // Call main menue AFTER the DELETE completed
+                    promptMenu();
+                }                 
+            }
+            );
+        })
+        
+    });
+  }
 
 function viewRoles() {
     console.log("Selecting all Roles...\n");
@@ -609,6 +654,48 @@ function createRole() {
     });
 }
    
+function deleteRole() {
+    
+    connection.query("SELECT * FROM role", function(err, res) {
+      if (err) throw err;
+      // Log all results of the SELECT statement      
+      console.table(res);
+        inquirer
+        .prompt([
+            {            
+            name: "id",
+            type: "input",
+            message: "Please, enter Role Id or Press enter to return",
+
+            }
+        ])
+        .then(answers => {
+           
+            connection.query(
+            "DELETE FROM role WHERE ?",
+            {
+                id: answers.id
+            },
+            function(err, res) {
+                // if (err)throw err;
+                if (err){
+                    console.log("Cannot delete or update a parent record, make sure Role is not being used before delete.\n");    
+                    promptMenu();
+                }else{
+                    if(res.affectedRows!=0){
+                        console.log(res.affectedRows + " Role deleted!\n");
+                    }            
+                    
+                    // Call main menue AFTER the DELETE completed
+                    promptMenu();
+                }                 
+            }
+            );
+        })
+        
+    });
+  }
+
 
 function viewUtilizedBudgetbyDep() {
     let depArray=[];    
