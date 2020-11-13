@@ -743,4 +743,5 @@ function viewUtilizedBudgetbyDep() {
     
 }
 
+//Calling start function to run APP
   start();
