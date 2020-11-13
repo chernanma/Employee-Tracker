@@ -3,7 +3,7 @@ const logo = require('asciiart-logo');
 const inquirer = require("inquirer");
 const connection = require('./db/connection');
 const cTable = require('console.table');
-
+// Creating App Banner
 function banner(){
     //Adding Logo using  Asciiart module
     console.log(
@@ -24,7 +24,7 @@ function banner(){
     );
 }
 
-
+// Initialize DB Connection
 function start(){
     connection.connect(function(err) {
         if (err) throw err;
@@ -35,6 +35,7 @@ function start(){
            
 }
 
+// Creating Main Menu
 function promptMenu() {
     
     inquirer
@@ -126,6 +127,7 @@ function promptMenu() {
       
   }
 
+// Display All Employee Data   
 function viewEmployees() {    
     console.log("Selecting all Employees...\n");
     connection.query(`SELECT employee.id, concat(employee.first_name,' ', employee.last_name) as Employee, role.title as Title, role.salary as Salary, concat(e2.first_name,' ', e2.last_name) as Manager, department.name as Department 
@@ -139,8 +141,8 @@ function viewEmployees() {
       promptMenu();
     });
   }
-  
 
+// Function to Create New Employee  
   function createEmployee() {
     let roleArray=[];    
     connection.query("SELECT * FROM role", function(err, resRole) {
@@ -241,18 +243,7 @@ function viewEmployees() {
     });
 }
 
-//validation just numbers for ID
-// const valID= async (id)=>{
-    
-//     if (id!=='' && Number(id)){
-//         return true;        
-//     }else{
-//         console.clear();
-//         promptMenu();        
-//     }
-    
-//   };
-
+// Function to Update Employee  
 function updateEmployeeRole() {
 
     console.log("Selecting all Employees...\n");
@@ -328,6 +319,7 @@ function updateEmployeeRole() {
     
 }
 
+// Function to Update Employee Manager  
 function updateEmployeeManager() {
 
     console.log("Selecting all Employees...\n");
@@ -410,6 +402,7 @@ function updateEmployeeManager() {
     
 }
 
+// Function to Delete Employee  
 function deleteEmployee() {
     
     connection.query("SELECT * FROM employee", function(err, res) {
@@ -453,6 +446,7 @@ function deleteEmployee() {
     });
   }
 
+// Function Display Employees by Manager Data  
 function viewEmployeesbyManager() {
     var query = "SELECT e1.id, e1.first_name, e1.last_name FROM employee e1 inner join employee e2 on e1.id=e2.manager_id group by e1.id";
     connection.query(query, function (err, res) {
@@ -490,10 +484,7 @@ function viewEmployeesbyManager() {
     
 }
 
-
-
-
-
+// Function Display All Deparments Data
 function viewDepartments() {
     console.log("Selecting all Departments...\n");
     connection.query("SELECT * FROM department", function(err, res) {
@@ -504,6 +495,7 @@ function viewDepartments() {
     });
 }
 
+// Function to Create New Department 
 function createDepartment() {
 
     inquirer
@@ -539,6 +531,7 @@ function createDepartment() {
     
 }
 
+// Function to Delete Department
 function deleteDepartment() {
     
     connection.query("SELECT * FROM department", function(err, res) {
@@ -581,6 +574,7 @@ function deleteDepartment() {
     });
   }
 
+// Function to Display All Roles Data
 function viewRoles() {
     console.log("Selecting all Roles...\n");
     connection.query("SELECT * FROM role", function(err, res) {
@@ -591,7 +585,7 @@ function viewRoles() {
     });
 }
 
-
+// Function to Create New Role
 function createRole() {
     const departmentArray=[];    
     connection.query("SELECT * FROM department", function(err, res) {
@@ -653,7 +647,8 @@ function createRole() {
             });   
     });
 }
-   
+
+// Function to Delete Role
 function deleteRole() {
     
     connection.query("SELECT * FROM role", function(err, res) {
@@ -696,7 +691,7 @@ function deleteRole() {
     });
   }
 
-
+// Function to Display Utilized Budget by Department
 function viewUtilizedBudgetbyDep() {
     let depArray=[];    
     connection.query("SELECT * FROM department", function(err, resDep) {
